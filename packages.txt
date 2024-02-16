@@ -1,10 +1,9 @@
 pandas
 numpy
-matplotlib.pyplot
+matplotlib
 seaborn
 streamlit
 datetime
 os
-plotly.express
-plotly.graph_objects
+plotly
 streamlit_dynamic_filters
