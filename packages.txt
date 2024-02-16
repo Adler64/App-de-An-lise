@@ -1,0 +1,10 @@
+pandas
+numpy
+matplotlib.pyplot
+seaborn
+streamlit
+datetime
+os
+plotly.express
+plotly.graph_objects
+streamlit_dynamic_filters
