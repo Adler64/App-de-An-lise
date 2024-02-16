@@ -6,3 +6,4 @@ streamlit
 datetime
 plotly
 streamlit_dynamic_filters
+openpyxl
