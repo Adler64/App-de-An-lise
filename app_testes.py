@@ -12,7 +12,6 @@ from streamlit_dynamic_filters import DynamicFilters
 
 st.set_page_config(page_title="Sinistro", layout="wide")
 
-
 if 'pagina_central' not in st.session_state:
     st.session_state.pagina_central = 'home'
 
@@ -39,13 +38,20 @@ def resultado_campanha(df):
     return df
 
 def filtros_dinamicos(df):
-    dynamic_filters = DynamicFilters(df, ['Tipo de resultado', 'Nome da campanha', 'Nome do conjunto de anúncios', 'Nome do anúncio', 'Status de veiculação'])
+    indicador = st.sidebar.radio("Indicador", ['Impressões', 'Cliques no link', 'Valor usado (BRL)',"CPC", "CTR", "CPM", 'Resultados', 'CPL'])
+    if 'Idade' in df.columns:
+        filtros = ['Tipo de resultado', 'Nome da campanha', 'Nome do conjunto de anúncios', 'Nome do anúncio', 'Status de veiculação', 'Idade', 'Gênero']
+    elif 'Plataforma' in df.columns:
+        filtros = ['Tipo de resultado', 'Nome da campanha', 'Nome do conjunto de anúncios', 'Nome do anúncio', 'Status de veiculação', 'Plataforma', 'Posicionamento']
+    else:
+        filtros = ['Tipo de resultado', 'Nome da campanha', 'Nome do conjunto de anúncios', 'Nome do anúncio', 'Status de veiculação']    
+
+    dynamic_filters = DynamicFilters(df, filtros)
     with st.sidebar:
         dynamic_filters.display_filters()
     df_filtrado = dynamic_filters.filter_df()
-    indicador = st.sidebar.radio("Indicador", ['Impressões', 'Cliques no link', 'Valor usado (BRL)',"CPC", "CTR", "CPM", 'Resultados', 'CPL'])
     return df_filtrado, indicador
-        
+            
 def analise_comportamentos(df, indicador):
     if "Idade" in df.columns:
         st.markdown('### Análise de Comportamentos')
@@ -74,7 +80,47 @@ def analise_comportamentos(df, indicador):
                         title = f'Comparativo de {indicador} por Idade e Gênero')
         st.plotly_chart(fig2, use_container_width = True)
         ###
- 
+    
+    elif "Plataforma" in df.columns:
+        st.markdown('### Análise de Plataformas')
+
+        col1, col2 = st.columns(2)
+
+        ###
+        st_plataforma = metricas(df, ['Plataforma', 'Dia'], ['Impressões', 'Cliques no link', 'Valor usado (BRL)', 'Resultados'])
+        fig = px.line(st_plataforma, x = 'Dia',  y = indicador, 
+                      line_group= 'Plataforma', 
+                      color = 'Plataforma',
+                      title = f'Série Temporal de {indicador} por Plataforma')
+        col1.plotly_chart(fig.update_layout(showlegend = False), use_container_width = True)    
+        ###
+
+        ###
+        ab_plataforma = metricas(df, ['Plataforma'], ['Impressões', 'Cliques no link', 'Valor usado (BRL)', 'Resultados'])
+        fig2 = px.bar(ab_plataforma, x = 'Plataforma',  y = indicador, 
+                        color = 'Plataforma',
+                        title = f'Comparativo de {indicador} por Plataforma')
+        col2.plotly_chart(fig2.update_layout(xaxis = {'categoryorder':'total descending'}), use_container_width = True)
+        ###
+
+        ###
+        st_posicionamento = metricas(df, ['Posicionamento', 'Dia'], ['Impressões', 'Cliques no link', 'Valor usado (BRL)', 'Resultados'])
+        fig = px.line(st_posicionamento, x = 'Dia',  y = indicador, 
+                      line_group= 'Posicionamento', 
+                      color = 'Posicionamento',
+                      title = f'Série Temporal de {indicador} por Posicionamento')
+        col1.plotly_chart(fig.update_layout(showlegend = False), use_container_width = True)    
+        ###
+
+        ###
+        ab_posicionamento = metricas(df, ['Posicionamento'], ['Impressões', 'Cliques no link', 'Valor usado (BRL)', 'Resultados'])
+        fig2 = px.bar(ab_posicionamento, x = 'Posicionamento',  y = indicador, 
+                        color = 'Posicionamento',
+                        title = f'Comparativo de {indicador} por Posicionamento')
+        col2.plotly_chart(fig2.update_layout(xaxis = {'categoryorder':'total descending'}), use_container_width = True)
+        ###
+        
+
 def home():
 
     st.markdown("# Marketing Analytics")
@@ -90,9 +136,7 @@ def home():
         st.divider()
         
         df = resultado_campanha(df)
-        st.write(df.head())
         df_filtrado, indicador = filtros_dinamicos(df)
-
         ######### Indicadores
         impressoes = df_filtrado['Impressões'].sum()
         cliques = df_filtrado['Cliques no link'].sum()
@@ -144,7 +188,7 @@ def home():
         fig2 = px.bar(ab_campanha, x = 'Nome da campanha',  y = indicador, 
                       color = 'Nome da campanha',
                       title = 'Comparativo de Indicadores por Campanha')
-        col2.plotly_chart(fig2, use_container_width = True)    
+        col2.plotly_chart(fig2.update_layout(xaxis = {'categoryorder':'total descending'}), use_container_width = True)    
         st.divider()
         ###
 
@@ -155,7 +199,7 @@ def home():
         fig = px.line(st_conjuntos, x = 'Dia',  y = indicador, 
                       line_group= 'Nome do conjunto de anúncios', 
                       color = 'Nome do conjunto de anúncios',
-                      title = 'Série Temporal de Indicadores por Campanha')
+                      title = 'Série Temporal de Indicadores por Conjunto')
         col1.plotly_chart(fig.update_layout(showlegend = False), use_container_width = True)    
         ###
 
@@ -163,8 +207,8 @@ def home():
         ab_conjuntos = metricas(df_filtrado, ['Nome do conjunto de anúncios'], ['Impressões', 'Cliques no link', 'Valor usado (BRL)', 'Resultados'])
         fig2 = px.bar(ab_conjuntos, x = 'Nome do conjunto de anúncios',  y = indicador, 
                       color = 'Nome do conjunto de anúncios',
-                      title = 'Comparativo de Indicadores por Campanha')
-        col2.plotly_chart(fig2, use_container_width = True)    
+                      title = 'Comparativo de Indicadores por Conjunto')
+        col2.plotly_chart(fig2.update_layout(xaxis = {'categoryorder':'total descending'}), use_container_width = True)    
         st.divider()
         ###
 
@@ -173,12 +217,11 @@ def home():
     else: 
         st.text("Arquivo não processado ainda.")
     
-
 def main():
 
     if st.session_state.pagina_central == 'home':
         home()
-
+    
 main()
 
 
